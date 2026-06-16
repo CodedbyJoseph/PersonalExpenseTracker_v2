@@ -1,8 +1,6 @@
 How to use program:
-
-
-
-
+- download PersonalExpenseTracker_v2.py
+- run with python PersonalExpenseTracker_v2.py in the terminal or any IDE"
 
 Core features:
 - New and improved version of the v1 tracker
@@ -12,5 +10,4 @@ Core features:
 
 Notes:
 GUI with Tkinker
-pyInstaller to make a downloadable app
 change remove expense into monthly history plus remove expense
