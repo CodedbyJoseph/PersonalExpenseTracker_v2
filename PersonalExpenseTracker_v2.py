@@ -41,7 +41,7 @@ nav_frame.pack(fill="x")
 nav_inner = tk.Frame(nav_frame, bg="#181825")
 nav_inner.pack()
 
-#------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------ create all selectable frames
 # log expense frame
 log_expense_frame = tk.Frame(root, bg="#1e1e2e")
 
@@ -65,12 +65,34 @@ category_phrase.pack(anchor="w")
 
 # desc_phrase
 desc_phrase = tk.Label(
-    log_expense_frame, text=f"Amount ($)", font=("Segoe UI", 12), bg="#1e1e2e", fg="#cdd6f4"
+    log_expense_frame, text=f"Desc. (Optional)", font=("Segoe UI", 12), bg="#1e1e2e", fg="#cdd6f4"
     )
 desc_phrase.pack(anchor="w")
 
+
+# breakdown_frame
+breakdown_frame = tk.Frame(root, bg="#1e1e2e")
+
+
+# set_budget_frame
+set_budget_frame = tk.Frame(root, bg="#1e1e2e")
+
+
+# history_frame
+history_frame = tk.Frame(root, bg="#1e1e2e")
+
 #------------------------------------------------------------------------------------------------------
-# log expense button within nav
+# hide and show frame function for on event of button
+all_frames = [log_expense_frame, breakdown_frame, set_budget_frame, history_frame]
+
+def show_frame(frame):
+    for f in all_frames:
+        f.pack_forget()
+    frame.pack(fill="both", expand=True)
+
+
+#------------------------------------------------------------------------------------------------------
+# log expense button in navigation frame
 log_expense_button = tk.Button(
     nav_inner,
     text="Log Expense",
@@ -80,11 +102,11 @@ log_expense_button = tk.Button(
     activeforeground="#cdd6f4",
     relief=tk.FLAT,
     padx=14, pady=7,
-    command=lambda: log_expense_frame.pack(fill="both", expand=True)        # pack/place the log_expense frame
+    command=lambda: show_frame(log_expense_frame)        # pack/place the log_expense frame
     )
 log_expense_button.pack(side="left")
 
-# breakdown button within nav
+# breakdown button in navigation frame
 breakdown_button = tk.Button(
     nav_inner,
     text="Breakdown",
@@ -94,7 +116,7 @@ breakdown_button = tk.Button(
     activeforeground="#cdd6f4",
     relief=tk.FLAT,
     padx=14, pady=7,
-    command=lambda: log_expense_frame.pack(fill="both", expand=True)
+    command=lambda: show_frame(breakdown_frame)
     )
 breakdown_button.pack(side="left")
 
@@ -108,7 +130,7 @@ set_budget_button = tk.Button(
     activeforeground="#cdd6f4",
     relief=tk.FLAT,
     padx=14, pady=7,
-    command=lambda: log_expense_frame.pack(fill="both", expand=True)
+    command=lambda: show_frame(set_budget_frame)
     )
 set_budget_button.pack(side="left")
 
@@ -122,11 +144,11 @@ history_button = tk.Button(
     activeforeground="#cdd6f4",
     relief=tk.FLAT,
     padx=14, pady=7,
-    command=lambda: log_expense_frame.pack(fill="both", expand=True)
+    command=lambda: show_frame(history_frame)
     )
 history_button.pack(side="left")
 
-#------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------padding
 WIN_H = 500
 
 # tuple for chosen padding of objects: (object, x_padding, y_padding)
@@ -135,10 +157,12 @@ object_padding = [
     (title_label, None, lambda height: (height//50, height//125)),
     (summary_label, None, lambda height: (0, height//100)),
     (warning_label, None, lambda height: (0, height//100)),
+
     (log_expense_phrase, None, lambda height: (height/50, height//125)),
     (amount_phrase, lambda height: (int(height//2.5), 0), lambda height: (0, height//50)),
     (category_phrase, lambda height: (int(height//2.5), 0), lambda height: (0, height//50)),
     (desc_phrase, lambda height: (int(height//2.5), 0), lambda height: (0, height//50)),
+    
     (log_expense_button, lambda height: height//100, lambda height: height//50),
     (breakdown_button, lambda height: height//100, lambda height: height//50),
     (set_budget_button, lambda height: height//100, lambda height: height//50),
@@ -164,6 +188,3 @@ root.bind("<Configure>", initiate_padding)
 #------------------------------------------------------------------------------------------------------
 # GUI event loop
 root.mainloop()
-
-# figure out how to hide frame on event of new button pressed
-# pack corresponding frame of new button on event of press
