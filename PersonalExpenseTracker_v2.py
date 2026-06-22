@@ -1,4 +1,5 @@
 import tkinter as tk
+import json
 from datetime import datetime
 
 BG = "#313244"
@@ -8,6 +9,7 @@ TEXT_BG = "#45475a"
 TEXT = "#cdd6f4"
 SUBTEXT = "#a6adc8"
 RED = "#f38ba8"
+GREEN = "#a6e3a1"
 
 year = datetime.now().year
 month = datetime.now().strftime("%B")
@@ -104,6 +106,71 @@ desc_input = tk.Entry(
     )
 desc_input.pack(side="right")
 
+#--------------------------------------------------------------------- SAVE EXPENSE BUTTON
+invalid_entry = tk.Label(log_expense_frame, text=f"Invalid Entry", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=RED)
+valid_entry = tk.Label(log_expense_frame, text=f"Successful", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=GREEN)
+
+# Save expense function
+def save_expense(amount, category, desc):
+
+    try:
+        with open("data.json", "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = []
+        
+    if amount != "" and category != "":
+        try:
+            amount = float(amount)
+        except ValueError:
+            if valid_entry.winfo_ismapped() == True:
+                valid_entry.pack_forget()
+
+            invalid_entry.pack(pady=(5,0))    # show error msg
+            return
+        
+        data.append(
+            {
+            "year": year,
+            "month": month,
+            "amount": amount,
+            "category": category,
+            "description": desc
+            }
+            )
+
+        with open("data.json", "w") as file:
+            json.dump(data, file)          # the file stores list of dict of expense info
+        
+        if invalid_entry.winfo_ismapped() == True:
+            invalid_entry.pack_forget()
+        
+        valid_entry.pack(pady=(5,0))  # show success msg
+    
+    else:
+        # show error msg
+        if valid_entry.winfo_ismapped() == True:
+            valid_entry.pack_forget()
+
+        invalid_entry.pack(pady=(5,0))
+
+# Save expense button
+SAVE_EXPENSE_BUTTON_BG = "#89b4fa"
+SAVE_EXPENSE_BUTTON_TEXT = "#1e1e2e"
+save_expense_button = tk.Button(
+    log_expense_frame,
+    font=("Segoe UI", 10, "bold"),
+    text="Save Expense",
+    bg=SAVE_EXPENSE_BUTTON_BG,
+    fg=SAVE_EXPENSE_BUTTON_TEXT,
+    activebackground=SAVE_EXPENSE_BUTTON_BG,
+    activeforeground=SAVE_EXPENSE_BUTTON_TEXT,
+    relief=tk.FLAT,
+    padx=14, pady=7,
+    command=lambda: save_expense(amount_input.get(), category_input.get(), desc_input.get())    # save the str values of button entries
+    )
+save_expense_button.pack()
+
 #------------------------------------------------------------------------------------------------------ BREAKDOWN FRAME
 # breakdown_frame
 breakdown_frame = tk.Frame(root, bg=DARK_BG)
@@ -167,8 +234,8 @@ def show_frame(frame):
     frame.pack(fill="both", expand=True)
 
 
-#------------------------------------------------------------------------------------------------------
-# log expense button in navigation frame
+#------------------------------------------------------------------------------------------------------ NAVIGATION BUTTONS
+# log expense button
 log_expense_button = tk.Button(
     nav_inner,
     text="Log Expense",
@@ -182,7 +249,7 @@ log_expense_button = tk.Button(
     )
 log_expense_button.pack(side="left")
 
-# breakdown button in navigation frame
+# breakdown button
 breakdown_button = tk.Button(
     nav_inner,
     text="Breakdown",
@@ -228,7 +295,8 @@ history_button.pack(side="left")
 WIN_H = 500
 
 # tuple for chosen padding of objects: (object, x_padding, y_padding)
-# if padding, must be function based in order to use the updated height
+# if padding, must be function-based in order to use the updated height
+# only pad always-showing objects, no error msgs here; pack_configure will pack them
 object_padding = [
     (title_label, None, lambda height: (height//50, height//125)),
     (summary_label, None, lambda height: (0, height//100)),
@@ -241,6 +309,7 @@ object_padding = [
     (category_input, lambda height: (0, int(height//2.5)), lambda height: (height/50, 0)),
     (desc_phrase, lambda height: (int(height//2.5), 0), lambda height: (height/50, 0)),
     (desc_input, lambda height: (0, int(height//2.5)), lambda height: (height/50, 0)),
+    (save_expense_button, None, lambda height: (height/25, 0)),
 
     (breakdown_phrase, None, lambda height: (height/50, height//125)),
 
@@ -277,5 +346,5 @@ root.bind("<Configure>", initiate_padding)
 # GUI event loop
 root.mainloop()
 
-# work: log expense button to save entry, save budget button to save budget
+# work: save budget button to save budget
 # optimization: loops instead of repetition
