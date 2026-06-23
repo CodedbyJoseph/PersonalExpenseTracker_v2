@@ -32,9 +32,20 @@ root.configure(bg=BG)
 title_label = tk.Label(root, text=f"{month} {year}", font=("Segoe UI", 15, "bold"), bg=BG, fg=TEXT)
 title_label.pack()     # pack to place, centres by default
 
+def current_budget():
+    with open("budget.txt", "r") as file:
+        budget = file.read()
+
+    if budget != "":
+        budget = float(budget)
+        return f"${budget:.2f}"
+    
+    else:
+        return None
+
 # summary label
 summary_label = tk.Label(
-    root, text=f"Spent:   |   Budget:   |   Remaining: ", font=("Segoe UI", 12), bg=BG, fg=SUBTEXT
+    root, text=f"Spent:  |  Budget:  {current_budget()}  |  Remaining: ", font=("Segoe UI", 12), bg=BG, fg=SUBTEXT
     )
 summary_label.pack()
 
@@ -107,10 +118,10 @@ desc_input = tk.Entry(
 desc_input.pack(side="right")
 
 #--------------------------------------------------------------------- SAVE EXPENSE BUTTON
-invalid_entry = tk.Label(log_expense_frame, text=f"Invalid Entry", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=RED)
-valid_entry = tk.Label(log_expense_frame, text=f"Successful", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=GREEN)
+invalid_expense_entry = tk.Label(log_expense_frame, text=f"Invalid Entry", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=RED)
+valid_expense_entry = tk.Label(log_expense_frame, text=f"Successful", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=GREEN)
 
-# Save expense function
+# save expense function
 def save_expense(amount, category, desc):
 
     try:
@@ -123,10 +134,10 @@ def save_expense(amount, category, desc):
         try:
             amount = float(amount)
         except ValueError:
-            if valid_entry.winfo_ismapped() == True:
-                valid_entry.pack_forget()
+            if valid_expense_entry.winfo_ismapped() == True:
+                valid_expense_entry.pack_forget()
 
-            invalid_entry.pack(pady=(5,0))    # show error msg
+            invalid_expense_entry.pack(pady=(5,0))    # show error msg
             return
         
         data.append(
@@ -142,19 +153,19 @@ def save_expense(amount, category, desc):
         with open("data.json", "w") as file:
             json.dump(data, file)          # the file stores list of dict of expense info
         
-        if invalid_entry.winfo_ismapped() == True:
-            invalid_entry.pack_forget()
+        if invalid_expense_entry.winfo_ismapped() == True:
+            invalid_expense_entry.pack_forget()
         
-        valid_entry.pack(pady=(5,0))  # show success msg
+        valid_expense_entry.pack(pady=(5,0))  # show success msg
     
     else:
         # show error msg
-        if valid_entry.winfo_ismapped() == True:
-            valid_entry.pack_forget()
+        if valid_expense_entry.winfo_ismapped() == True:
+            valid_expense_entry.pack_forget()
 
-        invalid_entry.pack(pady=(5,0))
+        invalid_expense_entry.pack(pady=(5,0))
 
-# Save expense button
+# save expense button
 SAVE_EXPENSE_BUTTON_BG = "#89b4fa"
 SAVE_EXPENSE_BUTTON_TEXT = "#1e1e2e"
 save_expense_button = tk.Button(
@@ -167,7 +178,7 @@ save_expense_button = tk.Button(
     activeforeground=SAVE_EXPENSE_BUTTON_TEXT,
     relief=tk.FLAT,
     padx=14, pady=7,
-    command=lambda: save_expense(amount_input.get(), category_input.get(), desc_input.get())    # save the str values of button entries
+    command=lambda: save_expense(amount_input.get(), category_input.get(), desc_input.get())    # use inputted button entries
     )
 save_expense_button.pack()
 
@@ -193,7 +204,7 @@ set_budget_phrase.pack()
 
 # current budget phrase
 current_budget_phrase = tk.Label(
-    set_budget_frame, text=f"Current Budget: ", font=("Segoe UI", 12), bg=DARK_BG, fg=TEXT
+    set_budget_frame, text=f"Current Budget: {current_budget()}", font=("Segoe UI", 12), bg=DARK_BG, fg=TEXT
     )
 current_budget_phrase.pack()
 
@@ -213,6 +224,60 @@ new_budget_input = tk.Entry(
     new_budget_row, font=("Segoe UI", 12), bg=TEXT_BG, fg=TEXT, insertbackground=TEXT, relief=tk.FLAT, width = 10
     )
 new_budget_input.pack(side="right")
+
+#--------------------------------------------------------------------- SAVE BUDGET BUTTON
+invalid_budget_entry = tk.Label(set_budget_frame, text=f"Invalid Entry", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=RED)
+valid_budget_entry = tk.Label(set_budget_frame, text=f"Successful", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=GREEN)
+
+# save budget function
+def save_budget(new_budget):
+    try:
+        float(new_budget)
+    
+    except:
+        if valid_budget_entry.winfo_ismapped() == True:
+            valid_budget_entry.pack_forget()
+        
+        invalid_budget_entry.pack(pady=(5,0))
+        return
+    
+    if "." in new_budget:
+        dollar, cent = new_budget.split(".")
+
+        if len(cent) > 2:
+            if valid_budget_entry.winfo_ismapped() == True:
+                valid_budget_entry.pack_forget()
+        
+            invalid_budget_entry.pack(pady=(5,0))
+            return
+
+    with open("budget.txt", "w") as file:
+        file.write(new_budget)
+
+    if invalid_budget_entry.winfo_ismapped() == True:
+            invalid_budget_entry.pack_forget()
+
+    valid_budget_entry.pack(pady=(5,0))
+
+    current_budget_phrase.config(text=f"Current Budget: ${float(new_budget):.2f}")  # config to update text, colour, or font only
+    summary_label.config(text=f"Spent:  |  Budget:  {current_budget()}  |  Remaining: ")
+
+# save budget button
+SAVE_BUDGET_BUTTON_BG = "#89b4fa"
+SAVE_BUDGET_BUTTON_TEXT = "#1e1e2e"
+save_budget_button = tk.Button(
+    set_budget_frame,
+    font=("Segoe UI", 10, "bold"),
+    text="Save Budget",
+    bg=SAVE_BUDGET_BUTTON_BG,
+    fg=SAVE_BUDGET_BUTTON_TEXT,
+    activebackground=SAVE_BUDGET_BUTTON_BG,
+    activeforeground=SAVE_BUDGET_BUTTON_TEXT,
+    relief=tk.FLAT,
+    padx=14, pady=7,
+    command=lambda: save_budget(new_budget_input.get())
+    )
+save_budget_button.pack()
 
 #------------------------------------------------------------------------------------------------------ HISTORY FRAME
 # history_frame
@@ -317,6 +382,7 @@ object_padding = [
     (current_budget_phrase, None, lambda height: (height/50, 0)),
     (new_budget_phrase, lambda height: (int(height//1.8), 0), lambda height: (height/20, 0)),
     (new_budget_input, lambda height: (0, int(height//1.8)), lambda height: (height/20, 0)),
+    (save_budget_button, None, lambda height: (height/25, 0)),
 
     (history_phrase, None, lambda height: (height/50, height//125)),
     
@@ -346,5 +412,5 @@ root.bind("<Configure>", initiate_padding)
 # GUI event loop
 root.mainloop()
 
-# work: save budget button to save budget
+
 # optimization: loops instead of repetition
