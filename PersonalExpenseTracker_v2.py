@@ -41,7 +41,10 @@ def current_budget():
         return f"${budget:.2f}"
     
     else:
-        return None
+        return
+    
+#def current_spent():
+    
 
 # summary label
 summary_label = tk.Label(
@@ -231,36 +234,42 @@ valid_budget_entry = tk.Label(set_budget_frame, text=f"Successful", font=("Segoe
 
 # save budget function
 def save_budget(new_budget):
-    try:
-        float(new_budget)
-    
-    except:
-        if valid_budget_entry.winfo_ismapped() == True:
-            valid_budget_entry.pack_forget()
-        
-        invalid_budget_entry.pack(pady=(5,0))
-        return
-    
-    if "." in new_budget:
-        dollar, cent = new_budget.split(".")
-
-        if len(cent) > 2:
-            if valid_budget_entry.winfo_ismapped() == True:
+    if new_budget != "":
+        try:
+            float(new_budget)
+        except ValueError:
+            if valid_budget_entry.winfo_ismapped():
                 valid_budget_entry.pack_forget()
-        
+
             invalid_budget_entry.pack(pady=(5,0))
             return
 
-    with open("budget.txt", "w") as file:
-        file.write(new_budget)
+        if "." in new_budget and len(new_budget.split(".")[1]) > 2:
+            if valid_budget_entry.winfo_ismapped():
+                valid_budget_entry.pack_forget()
 
-    if invalid_budget_entry.winfo_ismapped() == True:
+            invalid_budget_entry.pack(pady=(5,0))
+            return
+    
+        current_budget_phrase.config(text=f"Current Budget: ${float(new_budget):.2f}")  # config to update text, colour, or font only
+        summary_label.config(text=f"Spent:  |  Budget:  ${float(new_budget):.2f}  |  Remaining: ")
+
+        if invalid_budget_entry.winfo_ismapped():
             invalid_budget_entry.pack_forget()
 
-    valid_budget_entry.pack(pady=(5,0))
+        valid_budget_entry.pack(pady=(5,0))
 
-    current_budget_phrase.config(text=f"Current Budget: ${float(new_budget):.2f}")  # config to update text, colour, or font only
-    summary_label.config(text=f"Spent:  |  Budget:  {current_budget()}  |  Remaining: ")
+    else:
+        current_budget_phrase.config(text=f"Current Budget: None")  # config to update text, colour, or font only
+        summary_label.config(text=f"Spent:  |  Budget:  None  |  Remaining: ")
+
+        if invalid_budget_entry.winfo_ismapped():
+            invalid_budget_entry.pack_forget()
+
+        valid_budget_entry.pack(pady=(5,0))
+
+    with open("budget.txt", "w") as file:
+        file.write(new_budget)
 
 # save budget button
 SAVE_BUDGET_BUTTON_BG = "#89b4fa"
