@@ -181,7 +181,7 @@ save_expense_button = tk.Button(
     activeforeground=SAVE_EXPENSE_BUTTON_TEXT,
     relief=tk.FLAT,
     padx=14, pady=7,
-    command=lambda: save_expense(amount_input.get(), category_input.get(), desc_input.get())    # use inputted button entries
+    command=lambda: save_expense(amount_input.get(), category_input.get().title(), desc_input.get())    # use inputted button entries
     )
 save_expense_button.pack()
 
@@ -194,6 +194,71 @@ breakdown_phrase = tk.Label(
     breakdown_frame, text=f"{month} {year} Breakdown", font=("Segoe UI", 15, "bold"), bg=DARK_BG, fg=TEXT
     )
 breakdown_phrase.pack()
+
+#--------------------------------------------------------------------- SCROLLABLE BREAKDOWN FRAME
+# frame --> canvas (picture frame) --> inner frame (picture) --> widgets
+
+# canvas
+breakdown_canvas = tk.Canvas(breakdown_frame, bg=DARK_BG, highlightthickness=0)
+breakdown_canvas.pack(fill="both", expand=True)
+
+# inner
+breakdown_inner_frame = tk.Frame(breakdown_canvas, bg=DARK_BG)
+breakdown_inner_frame_id = breakdown_canvas.create_window((0, 0), window=breakdown_inner_frame, anchor="nw")
+
+# make inner frame match canvas width on window open/resize
+breakdown_canvas.bind("<Configure>", lambda e: breakdown_canvas.itemconfig(breakdown_inner_frame_id, width=e.width))
+
+
+
+
+
+# figure out how to make it so that the scrollbar will only show when the height of the inner is greater than the cavnas height
+
+
+
+# vertical scrollbar to maneuver canvas to capture/see different areas of inner frame
+breakdown_scrollbar = tk.Scrollbar(breakdown_frame, orient="vertical", command=breakdown_canvas.yview)
+breakdown_scrollbar.pack(side="right", fill="y")
+breakdown_canvas.configure(yscrollcommand=breakdown_scrollbar.set)
+
+# create bar graph
+def bar_graph():
+    with open("data.json", "r") as file:
+        expenses = json.load(file)
+    
+    category_totals = {}        # stores total amount per category
+    for expense in expenses:
+        if expense["year"] == year and expense["month"] == month:       # only display current month
+            cat = expense["category"]
+            category_totals[cat] = category_totals.get(cat, 0) + expense["amount"]
+
+    breakdown_canvas.update_idletasks()                      # force calculation of canvas size (w/o this, size is not yet calculated)
+    
+    max_amount = max(category_totals.values())
+    max_bar_width = breakdown_canvas.winfo_width() * 5 // 8    # determine max bar width proportional to canvas width
+
+    for category, amount in category_totals.items():
+        row = tk.Frame(breakdown_inner_frame, bg=DARK_BG)       # create inner frame per each row
+        row.pack(fill="x", pady=breakdown_canvas.winfo_width() // 100)
+
+        # category label
+        tk.Label(row, text=category, bg=DARK_BG, fg=TEXT, width=breakdown_canvas.winfo_width() // 38, anchor="e").pack(side="left")
+
+        bar_width = int((amount / max_amount) * max_bar_width)      # determine bar widths proportional to their amounts
+
+        # create bar
+        bar = tk.Frame(row, bg=GREEN, width=bar_width, height=20)
+        bar.pack(side="left")
+
+        # amount label
+        tk.Label(row, text=f"${amount:.2f}", bg=DARK_BG, fg=SUBTEXT).pack(side="left", padx=breakdown_canvas.winfo_width() // 160)
+
+# resize everything on resize
+# figure out how to update the bar graph whenever an expense is logged
+# for current_budget function, try and except for filenotfound and make the file
+# for log expense, max 14 char long
+
 
 #------------------------------------------------------------------------------------------------------ SET BUDGET FRAME
 # set_budget_frame
@@ -333,7 +398,7 @@ breakdown_button = tk.Button(
     activeforeground=TEXT,
     relief=tk.FLAT,
     padx=14, pady=7,
-    command=lambda: show_frame(breakdown_frame)
+    command=lambda: (show_frame(breakdown_frame), bar_graph())  # show frame and show graph on button event
     )
 breakdown_button.pack(side="left")
 
@@ -376,24 +441,24 @@ object_padding = [
     (summary_label, None, lambda height: (0, height//100)),
     (warning_label, None, lambda height: (0, height//100)),
 
-    (log_expense_phrase, None, lambda height: (height/50, 0)),
-    (amount_phrase, lambda height: (int(height//2.5), 0), lambda height: (height/50, 0)),
-    (amount_input, lambda height: (0, int(height//2.5)), lambda height: (height/50, 0)),
-    (category_phrase, lambda height: (int(height//2.5), 0), lambda height: (height/50, 0)),
-    (category_input, lambda height: (0, int(height//2.5)), lambda height: (height/50, 0)),
-    (desc_phrase, lambda height: (int(height//2.5), 0), lambda height: (height/50, 0)),
-    (desc_input, lambda height: (0, int(height//2.5)), lambda height: (height/50, 0)),
-    (save_expense_button, None, lambda height: (height/25, 0)),
+    (log_expense_phrase, None, lambda height: (height//50, 0)),
+    (amount_phrase, lambda height: (int(height//2.5), 0), lambda height: (height//50, 0)),
+    (amount_input, lambda height: (0, int(height//2.5)), lambda height: (height//50, 0)),
+    (category_phrase, lambda height: (int(height//2.5), 0), lambda height: (height//50, 0)),
+    (category_input, lambda height: (0, int(height//2.5)), lambda height: (height//50, 0)),
+    (desc_phrase, lambda height: (int(height//2.5), 0), lambda height: (height//50, 0)),
+    (desc_input, lambda height: (0, int(height//2.5)), lambda height: (height//50, 0)),
+    (save_expense_button, None, lambda height: (height//25, 0)),
 
-    (breakdown_phrase, None, lambda height: (height/50, height//125)),
+    (breakdown_phrase, None, lambda height: (height//50, height//50)),
 
-    (set_budget_phrase, None, lambda height: (height/50, 0)),
-    (current_budget_phrase, None, lambda height: (height/50, 0)),
-    (new_budget_phrase, lambda height: (int(height//1.8), 0), lambda height: (height/20, 0)),
-    (new_budget_input, lambda height: (0, int(height//1.8)), lambda height: (height/20, 0)),
-    (save_budget_button, None, lambda height: (height/25, 0)),
+    (set_budget_phrase, None, lambda height: (height//50, 0)),
+    (current_budget_phrase, None, lambda height: (height//50, 0)),
+    (new_budget_phrase, lambda height: (height//1.8, 0), lambda height: (height//20, 0)),
+    (new_budget_input, lambda height: (0, height//1.8), lambda height: (height//20, 0)),
+    (save_budget_button, None, lambda height: (height//25, 0)),
 
-    (history_phrase, None, lambda height: (height/50, height//125)),
+    (history_phrase, None, lambda height: (height//50, height//125)),
     
     (log_expense_button, lambda height: height//100, lambda height: height//50),
     (breakdown_button, lambda height: height//100, lambda height: height//50),
