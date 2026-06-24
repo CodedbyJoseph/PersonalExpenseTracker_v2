@@ -254,8 +254,8 @@ def bar_graph():
         # amount label
         tk.Label(row, text=f"${amount:.2f}", bg=DARK_BG, fg=SUBTEXT).pack(side="left", padx=breakdown_canvas.winfo_width() // 160)
 
+# fix scroll bar
 # resize everything on resize
-# figure out how to update the bar graph whenever an expense is logged
 # for current_budget function, try and except for filenotfound and make the file
 # for log expense, max 14 char long
 
