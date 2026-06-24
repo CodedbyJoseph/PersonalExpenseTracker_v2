@@ -14,6 +14,12 @@ GREEN = "#a6e3a1"
 year = datetime.now().year
 month = datetime.now().strftime("%B")
 
+#--------------------------------------------------------------------- Tkinter pack Syntax
+# side=top/bottom/left/right (which side widgets attach/stack from)
+# fill=x/y/both (fill all given space in that direction)
+# if side is vertical, fill=x fills all x, fill=y requires expand
+# if side is horizontal, fill=x requires expand, fill=y fills all y
+
 #------------------------------------------------------------------------------------------------------ WINDOW SET UP
 # window
 root = tk.Tk()
@@ -200,6 +206,13 @@ breakdown_phrase.pack()
 
 # canvas
 breakdown_canvas = tk.Canvas(breakdown_frame, bg=DARK_BG, highlightthickness=0)
+
+# vertical scrollbar to move canvas position
+breakdown_scrollbar = tk.Scrollbar(breakdown_frame, orient="vertical", command=breakdown_canvas.yview)
+breakdown_scrollbar.pack(side="right", fill="y")
+breakdown_canvas.configure(yscrollcommand=breakdown_scrollbar.set)
+
+# pack canvas to fill remaining space
 breakdown_canvas.pack(fill="both", expand=True)
 
 # inner
@@ -209,7 +222,8 @@ breakdown_inner_frame_id = breakdown_canvas.create_window((0, 0), window=breakdo
 # make inner frame match canvas width on window open/resize
 breakdown_canvas.bind("<Configure>", lambda e: breakdown_canvas.itemconfig(breakdown_inner_frame_id, width=e.width))
 
-
+# update scroll range when inner frame content grows
+breakdown_inner_frame.bind("<Configure>", lambda e: breakdown_canvas.configure(scrollregion=breakdown_canvas.bbox("all")))
 
 
 
@@ -217,13 +231,13 @@ breakdown_canvas.bind("<Configure>", lambda e: breakdown_canvas.itemconfig(break
 
 
 
-# vertical scrollbar to maneuver canvas to capture/see different areas of inner frame
-breakdown_scrollbar = tk.Scrollbar(breakdown_frame, orient="vertical", command=breakdown_canvas.yview)
-breakdown_scrollbar.pack(side="right", fill="y")
-breakdown_canvas.configure(yscrollcommand=breakdown_scrollbar.set)
-
 # create bar graph
 def bar_graph():
+    # delete each row and its children permanently
+    # w/o this, function will keep old expenses when it is called again on window resize
+    for widget in breakdown_inner_frame.winfo_children():
+        widget.destroy()
+
     with open("data.json", "r") as file:
         expenses = json.load(file)
     
@@ -243,22 +257,18 @@ def bar_graph():
         row.pack(fill="x", pady=breakdown_canvas.winfo_width() // 100)
 
         # category label
-        tk.Label(row, text=category, bg=DARK_BG, fg=TEXT, width=breakdown_canvas.winfo_width() // 38, anchor="e").pack(side="left")
+        bar_category = tk.Label(row, text=category, bg=DARK_BG, fg=TEXT, width=breakdown_canvas.winfo_width() // 38, anchor="e")
+        bar_category.pack(side="left")
 
-        bar_width = int((amount / max_amount) * max_bar_width)      # determine bar widths proportional to their amounts
+        bar_width = int((amount / max_amount) * max_bar_width)
 
         # create bar
         bar = tk.Frame(row, bg=GREEN, width=bar_width, height=20)
         bar.pack(side="left")
 
         # amount label
-        tk.Label(row, text=f"${amount:.2f}", bg=DARK_BG, fg=SUBTEXT).pack(side="left", padx=breakdown_canvas.winfo_width() // 160)
-
-# fix scroll bar
-# resize everything on resize
-# for current_budget function, try and except for filenotfound and make the file
-# for log expense, max 14 char long
-
+        bar_amount = tk.Label(row, text=f"${amount:.2f}", bg=DARK_BG, fg=SUBTEXT)
+        bar_amount.pack(side="left", padx=breakdown_canvas.winfo_width() // 160)
 
 #------------------------------------------------------------------------------------------------------ SET BUDGET FRAME
 # set_budget_frame
@@ -471,13 +481,18 @@ def initiate_padding(event):
     global WIN_H
     if root is event.widget:    # if root is the widget changed
         WIN_H = event.height
+
         for (widget, x_padding, y_padding) in object_padding:
-            widget.pack_configure(padx=x_padding(WIN_H) if x_padding else None, pady=y_padding(WIN_H))  # pack_configure updates/adds to initial pack()
+            # pack_configure updates/adds to initial pack()
+            widget.pack_configure(padx=x_padding(WIN_H) if x_padding else None, pady=y_padding(WIN_H))
+        
+        if breakdown_frame.winfo_ismapped():
+            bar_graph()
 
 # event listener
 # root.bind(event_name, function) --> "for root or object within, when event happens, call function with the event as parameter"
 # configure event occurs when on window initializaion/resize
-root.bind("<Configure>", initiate_padding)
+root.bind("<Configure>", (initiate_padding))
 
 
 
@@ -488,3 +503,6 @@ root.mainloop()
 
 
 # optimization: loops instead of repetition
+
+# for current_budget function, try and except for filenotfound and make the file
+# for log expense, max 14 char long
