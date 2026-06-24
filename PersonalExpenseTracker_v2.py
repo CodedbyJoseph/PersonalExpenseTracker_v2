@@ -452,12 +452,12 @@ object_padding = [
     (warning_label, None, lambda height: (0, height//100)),
 
     (log_expense_phrase, None, lambda height: (height//50, 0)),
-    (amount_phrase, lambda height: (int(height//2.5), 0), lambda height: (height//50, 0)),
-    (amount_input, lambda height: (0, int(height//2.5)), lambda height: (height//50, 0)),
-    (category_phrase, lambda height: (int(height//2.5), 0), lambda height: (height//50, 0)),
-    (category_input, lambda height: (0, int(height//2.5)), lambda height: (height//50, 0)),
-    (desc_phrase, lambda height: (int(height//2.5), 0), lambda height: (height//50, 0)),
-    (desc_input, lambda height: (0, int(height//2.5)), lambda height: (height//50, 0)),
+    (amount_phrase, lambda height: (height//2.5, 0), lambda height: (height//50, 0)),
+    (amount_input, lambda height: (0, height//2.5), lambda height: (height//50, 0)),
+    (category_phrase, lambda height: (height//2.5, 0), lambda height: (height//50, 0)),
+    (category_input, lambda height: (0, height//2.5), lambda height: (height//50, 0)),
+    (desc_phrase, lambda height: (height//2.5, 0), lambda height: (height//50, 0)),
+    (desc_input, lambda height: (0, height//2.5), lambda height: (height//50, 0)),
     (save_expense_button, None, lambda height: (height//25, 0)),
 
     (breakdown_phrase, None, lambda height: (height//50, height//50)),
