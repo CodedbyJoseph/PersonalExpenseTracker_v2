@@ -11,8 +11,8 @@ SUBTEXT = "#a6adc8"
 RED = "#f38ba8"
 GREEN = "#a6e3a1"
 
-year = datetime.now().year
-month = datetime.now().strftime("%B")
+YEAR = datetime.now().year
+MONTH = datetime.now().strftime("%B")
 
 #--------------------------------------------------------------------- Tkinter pack Syntax
 # side=top/bottom/left/right (which side widgets attach/stack from)
@@ -35,12 +35,35 @@ root.configure(bg=BG)
 
 #------------------------------------------------------------------------------------------------------ DEFAULT UPPER FRAME
 # title label
-title_label = tk.Label(root, text=f"{month} {year}", font=("Segoe UI", 15, "bold"), bg=BG, fg=TEXT)
+title_label = tk.Label(root, text=f"{MONTH} {YEAR}", font=("Segoe UI", 15, "bold"), bg=BG, fg=TEXT)
 title_label.pack()     # pack to place, centres by default
 
+def current_spent():
+    try:
+        with open("data.json", "r") as file:
+            expenses = json.load(file)
+
+    except (FileNotFoundError, json.JSONDecodeError):
+        return "$0.00"
+
+    total_spent = sum(
+        float(expense["amount"]) for expense in expenses if expense["year"] == YEAR and expense["month"] == MONTH
+        )
+
+    return f"${total_spent:.2f}"   
+
 def current_budget():
-    with open("budget.txt", "r") as file:
-        budget = file.read()
+    try:
+        with open("budget.txt", "r") as file:
+            budget = file.read()
+    
+    except FileNotFoundError:
+        with open("budget.txt", "w") as file:
+            file.write("")
+        
+        # with open("budget.txt", "r") as file:
+        #     budget = file.read()
+        budget = ""
 
     if budget != "":
         budget = float(budget)
@@ -49,13 +72,25 @@ def current_budget():
     else:
         return
     
-#def current_spent():
-    
+def current_remaining():
+    budget = current_budget()
 
+    if budget is None:
+        return
+    
+    budget = float(budget.strip("$"))
+
+    spent = current_spent()
+
+    spent = float(spent.strip("$"))
+
+    remaining = budget - spent
+
+    return f"${remaining:.2f}"
+    
 # summary label
-summary_label = tk.Label(
-    root, text=f"Spent:  |  Budget:  {current_budget()}  |  Remaining: ", font=("Segoe UI", 12), bg=BG, fg=SUBTEXT
-    )
+summary_text = f"Spent:  {current_spent()}  |  Budget:  {current_budget()}  |  Remaining:  {current_remaining()}"
+summary_label = tk.Label(root, text=summary_text, font=("Segoe UI", 12), bg=BG, fg=SUBTEXT)
 summary_label.pack()
 
 # warning label
@@ -129,6 +164,7 @@ desc_input.pack(side="right")
 #--------------------------------------------------------------------- SAVE EXPENSE BUTTON
 invalid_expense_entry = tk.Label(log_expense_frame, text=f"Invalid Entry", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=RED)
 valid_expense_entry = tk.Label(log_expense_frame, text=f"Successful", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=GREEN)
+too_long_expense_entry = tk.Label(log_expense_frame, text=f"Invalid Entry (Too Long)", font=("Segoe UI", 9, "bold"), bg=DARK_BG, fg=RED)
 
 # save expense function
 def save_expense(amount, category, desc):
@@ -145,14 +181,25 @@ def save_expense(amount, category, desc):
         except ValueError:
             if valid_expense_entry.winfo_ismapped() == True:
                 valid_expense_entry.pack_forget()
+            if too_long_expense_entry.winfo_ismapped() == True:
+                too_long_expense_entry.pack_forget()
 
-            invalid_expense_entry.pack(pady=(5,0))    # show error msg
+            invalid_expense_entry.pack(pady=(5,0))      # show error msg for non-number amount
             return
         
+        if len(category) > 14:      # max category length of 14 chars
+            if valid_expense_entry.winfo_ismapped() == True:
+                valid_expense_entry.pack_forget()
+            if invalid_expense_entry.winfo_ismapped() == True:
+                invalid_expense_entry.pack_forget()
+
+            too_long_expense_entry.pack(pady=(5,0))     # show error msg for lengthy name
+            return
+
         data.append(
             {
-            "year": year,
-            "month": month,
+            "year": YEAR,
+            "month": MONTH,
             "amount": amount,
             "category": category,
             "description": desc
@@ -164,15 +211,23 @@ def save_expense(amount, category, desc):
         
         if invalid_expense_entry.winfo_ismapped() == True:
             invalid_expense_entry.pack_forget()
+        if too_long_expense_entry.winfo_ismapped() == True:
+            too_long_expense_entry.pack_forget()
         
-        valid_expense_entry.pack(pady=(5,0))  # show success msg
+        valid_expense_entry.pack(pady=(5,0))        # show success msg
+
+        # update summary text with new spent and remaining
+        summary_text = f"Spent:  {current_spent()}  |  Budget:  {current_budget()}  |  Remaining:  {current_remaining()}"
+        summary_label.config(text=summary_text)     # config to update text, colour, or font only
     
     else:
         # show error msg
         if valid_expense_entry.winfo_ismapped() == True:
             valid_expense_entry.pack_forget()
+        if too_long_expense_entry.winfo_ismapped() == True:
+            too_long_expense_entry.pack_forget()
 
-        invalid_expense_entry.pack(pady=(5,0))
+        invalid_expense_entry.pack(pady=(5,0))      # show error msg for incomplete expense
 
 # save expense button
 SAVE_EXPENSE_BUTTON_BG = "#89b4fa"
@@ -197,7 +252,7 @@ breakdown_frame = tk.Frame(root, bg=DARK_BG)
 
 # breakdown phrase
 breakdown_phrase = tk.Label(
-    breakdown_frame, text=f"{month} {year} Breakdown", font=("Segoe UI", 15, "bold"), bg=DARK_BG, fg=TEXT
+    breakdown_frame, text=f"{MONTH} {YEAR} Breakdown", font=("Segoe UI", 15, "bold"), bg=DARK_BG, fg=TEXT
     )
 breakdown_phrase.pack()
 
@@ -243,7 +298,7 @@ def bar_graph():
     
     category_totals = {}        # stores total amount per category
     for expense in expenses:
-        if expense["year"] == year and expense["month"] == month:       # only display current month
+        if expense["year"] == YEAR and expense["month"] == MONTH:       # only display current month
             cat = expense["category"]
             category_totals[cat] = category_totals.get(cat, 0) + expense["amount"]
 
@@ -325,9 +380,16 @@ def save_budget(new_budget):
 
             invalid_budget_entry.pack(pady=(5,0))
             return
+        
+        with open("budget.txt", "w") as file:       # update budget file
+            file.write(new_budget)
     
-        current_budget_phrase.config(text=f"Current Budget: ${float(new_budget):.2f}")  # config to update text, colour, or font only
-        summary_label.config(text=f"Spent:  |  Budget:  ${float(new_budget):.2f}  |  Remaining: ")
+        # update budget phrase with new budget
+        current_budget_phrase.config(text=f"Current Budget: ${float(new_budget):.2f}")
+
+        # update summary text with new budget
+        summary_text = f"Spent:  {current_spent()}  |  Budget:  ${float(new_budget):.2f}  |  Remaining:  {current_remaining()}"
+        summary_label.config(text=summary_text)
 
         if invalid_budget_entry.winfo_ismapped():
             invalid_budget_entry.pack_forget()
@@ -335,16 +397,20 @@ def save_budget(new_budget):
         valid_budget_entry.pack(pady=(5,0))
 
     else:
-        current_budget_phrase.config(text=f"Current Budget: None")  # config to update text, colour, or font only
-        summary_label.config(text=f"Spent:  |  Budget:  None  |  Remaining: ")
+        with open("budget.txt", "w") as file:       # update budget file
+                file.write(new_budget)
+
+        # update budget phrase
+        current_budget_phrase.config(text=f"Current Budget: None")
+
+        # update summary text (budget is none, remaining is none, spent stays same)
+        summary_text = f"Spent:  {current_spent()}  |  Budget:  None  |  Remaining:  None"
+        summary_label.config(text=summary_text)
 
         if invalid_budget_entry.winfo_ismapped():
             invalid_budget_entry.pack_forget()
 
         valid_budget_entry.pack(pady=(5,0))
-
-    with open("budget.txt", "w") as file:
-        file.write(new_budget)
 
 # save budget button
 SAVE_BUDGET_BUTTON_BG = "#89b4fa"
@@ -503,6 +569,3 @@ root.mainloop()
 
 
 # optimization: loops instead of repetition
-
-# for current_budget function, try and except for filenotfound and make the file
-# for log expense, max 14 char long
