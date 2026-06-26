@@ -3,7 +3,7 @@ How to use program:
 - run with python PersonalExpenseTracker_v2.py in the terminal or any IDE"
 
 Core features:
+- very user friendly GUI
 - New and improved version of the v1 tracker
-- all functions (log/del expense, summary, breakdown, budget) have been implemented thru a GUI
-- very user friendly for non-techy individuals
+- log/del expense, view summary, view breakdown, set budget
 - view monthly history, not just current month
