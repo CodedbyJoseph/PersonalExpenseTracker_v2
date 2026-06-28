@@ -270,8 +270,10 @@ breakdown_canvas.configure(yscrollcommand=breakdown_scrollbar.set)
 # pack canvas to fill remaining space
 breakdown_canvas.pack(fill="both", expand=True)
 
-# inner
+# inner (may be/become larger than canvas, but it lives within canvas, thus why its parent)
 breakdown_inner_frame = tk.Frame(breakdown_canvas, bg=DARK_BG)
+
+# place within canvas instead of pack
 breakdown_inner_frame_id = breakdown_canvas.create_window((0, 0), window=breakdown_inner_frame, anchor="nw")
 
 # make inner frame match canvas width on window open/resize
@@ -279,12 +281,6 @@ breakdown_canvas.bind("<Configure>", lambda e: breakdown_canvas.itemconfig(break
 
 # update scroll range when inner frame content grows
 breakdown_inner_frame.bind("<Configure>", lambda e: breakdown_canvas.configure(scrollregion=breakdown_canvas.bbox("all")))
-
-
-
-# figure out how to make it so that the scrollbar will only show when the height of the inner is greater than the cavnas height
-
-
 
 # create bar graph
 def bar_graph():
@@ -437,7 +433,39 @@ history_frame = tk.Frame(root, bg=DARK_BG)
 history_phrase = tk.Label(
     history_frame, text=f"Expense History", font=("Segoe UI", 15, "bold"), bg=DARK_BG, fg=TEXT
     )
-breakdown_phrase.pack()
+history_phrase.pack()
+
+# canvas
+history_canvas = tk.Canvas(history_frame, bg=DARK_BG, highlightthickness=0)
+
+# vertical scrollbar
+history_scrollbar = tk.Scrollbar(history_frame, orient="vertical", command=history_canvas.yview)
+history_scrollbar.pack(side="right", fill="y")
+history_canvas.configure(yscrollcommand=history_scrollbar.set)
+
+# pack canvas to fill remaining space
+history_canvas.pack(fill="both", expand=True)
+
+# inner
+history_inner_frame = tk.Frame(history_canvas, bg=DARK_BG)
+history_inner_frame_id = history_canvas.create_window((0, 0), window=history_inner_frame, anchor="nw")
+
+# make inner frame match canvas width on window open/resize
+history_canvas.bind("<Configure>", lambda e: history_canvas.itemconfig(history_inner_frame_id, width=e.width))
+
+# update scroll range when inner frame content grows
+history_inner_frame.bind("<Configure>", lambda e: history_canvas.configure(scrollregion=history_canvas.bbox("all")))
+
+# bind to root instead of canvas so scroll occurs when hovering over child widgets inside the canvas
+def on_mousewheel(event):
+    if breakdown_frame.winfo_ismapped():
+        breakdown_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+    if history_frame.winfo_ismapped():
+        history_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+root.bind("<MouseWheel>", on_mousewheel)
+
+
 
 #------------------------------------------------------------------------------------------------------ TOGGLE FRAME FUNCTION
 # hide and show frame function for on event of button
@@ -447,7 +475,6 @@ def show_frame(frame):
     for f in all_frames:
         f.pack_forget()
     frame.pack(fill="both", expand=True)
-
 
 #------------------------------------------------------------------------------------------------------ NAVIGATION BUTTONS
 # log expense button
