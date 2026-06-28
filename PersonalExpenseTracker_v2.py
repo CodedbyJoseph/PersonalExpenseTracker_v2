@@ -254,7 +254,7 @@ breakdown_frame = tk.Frame(root, bg=DARK_BG)
 breakdown_phrase = tk.Label(
     breakdown_frame, text=f"{MONTH} {YEAR} Breakdown", font=("Segoe UI", 15, "bold"), bg=DARK_BG, fg=TEXT
     )
-breakdown_phrase.pack()
+breakdown_phrase.pack() # pack now to reserve position in top of frame
 
 #--------------------------------------------------------------------- SCROLLABLE BREAKDOWN FRAME
 # frame --> canvas (picture frame) --> inner frame (picture) --> widgets
@@ -465,7 +465,44 @@ def on_mousewheel(event):
 
 root.bind("<MouseWheel>", on_mousewheel)
 
+# create history: each month, month and year, total spent, number of expenses, each expense and its category
+# def bar_graph():
+#     # delete each row and its children permanently
+#     # w/o this, function will keep old expenses when it is called again on window resize
+#     for widget in breakdown_inner_frame.winfo_children():
+#         widget.destroy()
 
+#     with open("data.json", "r") as file:
+#         expenses = json.load(file)
+    
+#     category_totals = {}        # stores total amount per category
+#     for expense in expenses:
+#         if expense["year"] == YEAR and expense["month"] == MONTH:       # only display current month
+#             cat = expense["category"]
+#             category_totals[cat] = category_totals.get(cat, 0) + expense["amount"]
+
+#     breakdown_canvas.update_idletasks()                      # force calculation of canvas size (w/o this, size is not yet calculated)
+    
+#     max_amount = max(category_totals.values())
+#     max_bar_width = breakdown_canvas.winfo_width() * 5 // 8    # determine max bar width proportional to canvas width
+
+#     for category, amount in category_totals.items():
+#         row = tk.Frame(breakdown_inner_frame, bg=DARK_BG)       # create inner frame per each row
+#         row.pack(fill="x", pady=breakdown_canvas.winfo_width() // 100)
+
+#         # category label
+#         bar_category = tk.Label(row, text=category, bg=DARK_BG, fg=TEXT, width=breakdown_canvas.winfo_width() // 38, anchor="e")
+#         bar_category.pack(side="left")
+
+#         bar_width = int((amount / max_amount) * max_bar_width)
+
+#         # create bar
+#         bar = tk.Frame(row, bg=GREEN, width=bar_width, height=20)
+#         bar.pack(side="left")
+
+#         # amount label
+#         bar_amount = tk.Label(row, text=f"${amount:.2f}", bg=DARK_BG, fg=SUBTEXT)
+#         bar_amount.pack(side="left", padx=breakdown_canvas.winfo_width() // 160)
 
 #------------------------------------------------------------------------------------------------------ TOGGLE FRAME FUNCTION
 # hide and show frame function for on event of button
