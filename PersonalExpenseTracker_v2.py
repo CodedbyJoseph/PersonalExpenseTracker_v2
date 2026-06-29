@@ -301,7 +301,7 @@ def bar_graph():
     breakdown_canvas.update_idletasks()                      # force calculation of canvas size (w/o this, size is not yet calculated)
     
     max_amount = max(category_totals.values())
-    max_bar_width = breakdown_canvas.winfo_width() * 5 // 8    # determine max bar width proportional to canvas width
+    max_bar_width = breakdown_canvas.winfo_width() * 5 // 8    # determine a max bar width proportional to canvas width
 
     for category, amount in category_totals.items():
         row = tk.Frame(breakdown_inner_frame, bg=DARK_BG)       # create inner frame per each row
@@ -465,44 +465,45 @@ def on_mousewheel(event):
 
 root.bind("<MouseWheel>", on_mousewheel)
 
-# create history: each month, month and year, total spent, number of expenses, each expense and its category
-# def bar_graph():
-#     # delete each row and its children permanently
-#     # w/o this, function will keep old expenses when it is called again on window resize
-#     for widget in breakdown_inner_frame.winfo_children():
-#         widget.destroy()
+def show_history():
+    for widget in history_inner_frame.winfo_children():
+        widget.destroy()
 
-#     with open("data.json", "r") as file:
-#         expenses = json.load(file)
+    history_canvas.update_idletasks()
+
+    with open("data.json", "r") as file:
+        expenses = json.load(file)
+
+    # dict: keys (month,year): values [expense1, etc]
+    history = {}
+
+    for expense in expenses:
+        key = (expense["month"], expense["year"])   # tuple key (month, year)
+        if key not in history:
+            history[key] = []                        # create key and empty list value
+        history[key].append(expense)                 # append expense to that month's list value
     
-#     category_totals = {}        # stores total amount per category
-#     for expense in expenses:
-#         if expense["year"] == YEAR and expense["month"] == MONTH:       # only display current month
-#             cat = expense["category"]
-#             category_totals[cat] = category_totals.get(cat, 0) + expense["amount"]
+    # display each month and its respective expenses
+    for month_year_key in history:
+        one_month_inner_frame = tk.Frame(history_inner_frame, bg=DARK_BG)
+        one_month_inner_frame.pack(fill="both", expand=True)
 
-#     breakdown_canvas.update_idletasks()                      # force calculation of canvas size (w/o this, size is not yet calculated)
-    
-#     max_amount = max(category_totals.values())
-#     max_bar_width = breakdown_canvas.winfo_width() * 5 // 8    # determine max bar width proportional to canvas width
+        month, year = month_year_key
+        month_label = tk.Label(
+            one_month_inner_frame, text=f"{month} {year}", bg=DARK_BG, fg=TEXT, anchor="w"
+            )
+        month_label.pack(fill="x", padx=history_canvas.winfo_width() // 5)
 
-#     for category, amount in category_totals.items():
-#         row = tk.Frame(breakdown_inner_frame, bg=DARK_BG)       # create inner frame per each row
-#         row.pack(fill="x", pady=breakdown_canvas.winfo_width() // 100)
+        for expense in history[month_year_key]:
+            expense_label = tk.Label(
+                one_month_inner_frame, text=f"{expense['category']}  ${expense['amount']:.2f}", bg=DARK_BG, fg=TEXT, anchor="w"
+                )
+            expense_label.pack(fill="x", padx=history_canvas.winfo_width() // 5)
+        
+        space_label = tk.Label(one_month_inner_frame, bg=DARK_BG, fg=TEXT)
+        space_label.pack()
 
-#         # category label
-#         bar_category = tk.Label(row, text=category, bg=DARK_BG, fg=TEXT, width=breakdown_canvas.winfo_width() // 38, anchor="e")
-#         bar_category.pack(side="left")
 
-#         bar_width = int((amount / max_amount) * max_bar_width)
-
-#         # create bar
-#         bar = tk.Frame(row, bg=GREEN, width=bar_width, height=20)
-#         bar.pack(side="left")
-
-#         # amount label
-#         bar_amount = tk.Label(row, text=f"${amount:.2f}", bg=DARK_BG, fg=SUBTEXT)
-#         bar_amount.pack(side="left", padx=breakdown_canvas.winfo_width() // 160)
 
 #------------------------------------------------------------------------------------------------------ TOGGLE FRAME FUNCTION
 # hide and show frame function for on event of button
@@ -566,7 +567,7 @@ history_button = tk.Button(
     activeforeground=TEXT,
     relief=tk.FLAT,
     padx=14, pady=7,
-    command=lambda: show_frame(history_frame)
+    command=lambda: (show_frame(history_frame), show_history())
     )
 history_button.pack(side="left")
 
@@ -617,7 +618,10 @@ def initiate_padding(event):
             widget.pack_configure(padx=x_padding(WIN_H) if x_padding else None, pady=y_padding(WIN_H))
         
         if breakdown_frame.winfo_ismapped():
-            bar_graph()
+            bar_graph()     # on window resize, graph will regenerate with updated proportional padding defined within the function
+        
+        if history_frame.winfo_ismapped():
+            show_history()
 
 # event listener
 # root.bind(event_name, function) --> "for root or object within, when event happens, call function with the event as parameter"
