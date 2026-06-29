@@ -9,7 +9,8 @@ TEXT_BG = "#45475a"
 TEXT = "#cdd6f4"
 SUBTEXT = "#a6adc8"
 RED = "#f38ba8"
-GREEN = "#a6e3a1"
+GREEN = "#6a9e65"
+CYAN = "#6c9eb0"
 
 YEAR = datetime.now().year
 MONTH = datetime.now().strftime("%B")
@@ -284,13 +285,16 @@ breakdown_inner_frame.bind("<Configure>", lambda e: breakdown_canvas.configure(s
 
 # create bar graph
 def bar_graph():
+    try:
+        with open("data.json", "r") as file:
+            expenses = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return
+
     # delete each row and its children permanently
     # w/o this, function will keep old expenses when it is called again on window resize
     for widget in breakdown_inner_frame.winfo_children():
         widget.destroy()
-
-    with open("data.json", "r") as file:
-        expenses = json.load(file)
     
     category_totals = {}        # stores total amount per category
     for expense in expenses:
@@ -466,13 +470,16 @@ def on_mousewheel(event):
 root.bind("<MouseWheel>", on_mousewheel)
 
 def show_history():
+    try:
+        with open("data.json", "r") as file:
+            expenses = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return
+    
     for widget in history_inner_frame.winfo_children():
         widget.destroy()
 
     history_canvas.update_idletasks()
-
-    with open("data.json", "r") as file:
-        expenses = json.load(file)
 
     # dict: keys (month,year): values [expense1, etc]
     history = {}
@@ -485,25 +492,34 @@ def show_history():
     
     # display each month and its respective expenses
     for month_year_key in history:
-        one_month_inner_frame = tk.Frame(history_inner_frame, bg=DARK_BG)
-        one_month_inner_frame.pack(fill="both", expand=True)
-
         month, year = month_year_key
+
+        # month label
         month_label = tk.Label(
-            one_month_inner_frame, text=f"{month} {year}", bg=DARK_BG, fg=TEXT, anchor="w"
+            history_inner_frame, text=f"{month} {year}", font=("Segoe UI", 10, "bold"), bg=BG, fg=TEXT, anchor="w"
             )
-        month_label.pack(fill="x", padx=history_canvas.winfo_width() // 5)
+        # padx with different values of left and right to centre-align screen (due to scrollbar)
+        month_label.pack(
+            fill="x", padx=(history_canvas.winfo_width() // 4 + history_scrollbar.winfo_width(), history_canvas.winfo_width() // 4), pady=5
+            )
 
+        # expense labels (category and amount)
         for expense in history[month_year_key]:
-            expense_label = tk.Label(
-                one_month_inner_frame, text=f"{expense['category']}  ${expense['amount']:.2f}", bg=DARK_BG, fg=TEXT, anchor="w"
+            expense_row = tk.Frame(history_inner_frame, bg=TEXT_BG)
+            expense_row.pack(
+                fill="x", padx=(history_canvas.winfo_width() // 4 + history_scrollbar.winfo_width(), history_canvas.winfo_width() // 4), pady=(0,5)
                 )
-            expense_label.pack(fill="x", padx=history_canvas.winfo_width() // 5)
+
+            category_label = tk.Label(expense_row, text=f"{expense['category']}", font=("Segoe UI", 10), bg=TEXT_BG, fg=TEXT)
+            category_label.pack(side="left")
+            
+            amount_label = tk.Label(expense_row, text=f"${expense['amount']:.2f}", font=("Segoe UI", 10), bg=TEXT_BG, fg=TEXT)
+            amount_label.pack(side="right")
         
-        space_label = tk.Label(one_month_inner_frame, bg=DARK_BG, fg=TEXT)
-        space_label.pack()
-
-
+        month_divider = tk.Frame(history_inner_frame, bg=CYAN, height=2)
+        month_divider.pack(
+            fill="x", padx=(history_canvas.winfo_width() // 4 + history_scrollbar.winfo_width(), history_canvas.winfo_width() // 4), pady=5
+            )
 
 #------------------------------------------------------------------------------------------------------ TOGGLE FRAME FUNCTION
 # hide and show frame function for on event of button
@@ -572,7 +588,8 @@ history_button = tk.Button(
 history_button.pack(side="left")
 
 #------------------------------------------------------------------------------------------------------ PADDING
-WIN_H = 500
+WIN_H = None
+WIN_W = None
 
 # tuple for chosen padding of objects: (object, x_padding, y_padding)
 # if padding, must be function-based in order to use the updated height
@@ -609,9 +626,16 @@ object_padding = [
 
 # add/update padding
 def initiate_padding(event):
-    global WIN_H
-    if root is event.widget:    # if root is the widget changed
+    global WIN_H, WIN_W
+    if root is event.widget:    # if root undergoes configure event (event is automatically assigned root's attributes)
+
+        # if event is window move (window size unchanged), skip padding regeneration
+        if event.height == WIN_H and event.width == WIN_W:
+            return
+        
+        # update stored window dimensions in order for them to be used for padding
         WIN_H = event.height
+        WIN_W = event.width
 
         for (widget, x_padding, y_padding) in object_padding:
             # pack_configure updates/adds to initial pack()
@@ -625,15 +649,9 @@ def initiate_padding(event):
 
 # event listener
 # root.bind(event_name, function) --> "for root or object within, when event happens, call function with the event as parameter"
-# configure event occurs when on window initializaion/resize
+# configure event occurs when on window initialization/resize/move
 root.bind("<Configure>", (initiate_padding))
-
-
-
 
 #------------------------------------------------------------------------------------------------------
 # GUI event loop
 root.mainloop()
-
-
-# optimization: loops instead of repetition
