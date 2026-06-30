@@ -1,5 +1,5 @@
 How to use program:
-- download PersonalExpenseTracker_v2.py
+- clone PersonalExpenseTracker_v2.py
 - run with python PersonalExpenseTracker_v2.py in the terminal or any IDE"
 
 Core features:
