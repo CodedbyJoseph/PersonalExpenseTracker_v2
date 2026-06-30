@@ -491,19 +491,30 @@ def show_history():
         history[key].append(expense)                 # append expense to that month's list value
     
     # display each month and its respective expenses
-    for month_year_key in history:
+    for month_year_key in reversed(list(history.keys())):   # display entries from newest to oldest month
+        month_row = tk.Frame(history_inner_frame, bg=BG)
+
+        # padx with different values of left and right to centre-align screen (due to scrollbar)
+        month_row.pack(
+            fill="x", padx=(history_canvas.winfo_width() // 4 + history_scrollbar.winfo_width(), history_canvas.winfo_width() // 4), pady=5
+        )
+
         month, year = month_year_key
 
         # month label
-        month_label = tk.Label(
-            history_inner_frame, text=f"{month} {year}", font=("Segoe UI", 10, "bold"), bg=BG, fg=TEXT, anchor="w"
-            )
-        # padx with different values of left and right to centre-align screen (due to scrollbar)
-        month_label.pack(
-            fill="x", padx=(history_canvas.winfo_width() // 4 + history_scrollbar.winfo_width(), history_canvas.winfo_width() // 4), pady=5
-            )
+        month_label = tk.Label(month_row, text=f"{month} {year}", font=("Segoe UI", 10, "bold"), bg=BG, fg=TEXT)
+        month_label.pack(side="left")
+        
+        month_spent = sum(expense_dict["amount"] for expense_dict in history[month_year_key])   # for expense dict in expenses list
+        
+        month_expenses_count = len(history[month_year_key])
 
-        # expense labels (category and amount)
+        # month spent and total expenses label
+        month_spent_and_total_expenses_label = tk.Label(
+            month_row, text=f"${month_spent:.2f}  |  {month_expenses_count} expense(s)", bg=BG, fg=TEXT
+            )
+        month_spent_and_total_expenses_label.pack(side="right")
+
         for expense in history[month_year_key]:
             expense_row = tk.Frame(history_inner_frame, bg=TEXT_BG)
             expense_row.pack(
