@@ -11,6 +11,7 @@ SUBTEXT = "#a6adc8"
 RED = "#f38ba8"
 GREEN = "#6a9e65"
 CYAN = "#6c9eb0"
+WHITE = "#ffffff"
 
 YEAR = datetime.now().year
 MONTH = datetime.now().strftime("%B")
@@ -304,6 +305,9 @@ def bar_graph():
 
     breakdown_canvas.update_idletasks()                      # force calculation of canvas size (w/o this, size is not yet calculated)
     
+    if category_totals == {}:
+        return      # if no expenses this time period, nothing to display
+
     max_amount = max(category_totals.values())
     max_bar_width = breakdown_canvas.winfo_width() * 5 // 8    # determine a max bar width proportional to canvas width
 
@@ -447,6 +451,23 @@ history_scrollbar = tk.Scrollbar(history_frame, orient="vertical", command=histo
 history_scrollbar.pack(side="right", fill="y")
 history_canvas.configure(yscrollcommand=history_scrollbar.set)
 
+# delete expenses button
+DEL_EXP_BUTTON_BG = "#89b4fa"
+DEL_EXP_BUTTON_TEXT = "#1e1e2e"
+delete_expense_button = tk.Button(
+    history_frame,
+    font=("Segoe UI", 8, "bold"),
+    text="Delete Forever",
+    bg=DEL_EXP_BUTTON_BG,
+    fg=DEL_EXP_BUTTON_TEXT,
+    activebackground=DEL_EXP_BUTTON_BG,
+    activeforeground=DEL_EXP_BUTTON_TEXT,
+    relief=tk.FLAT,
+    padx=4, pady=2,
+    command=lambda: None
+    )
+delete_expense_button.pack(side="bottom")
+
 # pack canvas to fill remaining space
 history_canvas.pack(fill="both", expand=True)
 
@@ -460,14 +481,17 @@ history_canvas.bind("<Configure>", lambda e: history_canvas.itemconfig(history_i
 # update scroll range when inner frame content grows
 history_inner_frame.bind("<Configure>", lambda e: history_canvas.configure(scrollregion=history_canvas.bbox("all")))
 
-# bind to root instead of canvas so scroll occurs when hovering over child widgets inside the canvas
+# allow scroll to occur when hovering over child widgets inside the canvas
 def on_mousewheel(event):
     if breakdown_frame.winfo_ismapped():
         breakdown_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
     if history_frame.winfo_ismapped():
         history_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
+# bind to root instead of canvas so scroll occurs for any mouse position
 root.bind("<MouseWheel>", on_mousewheel)
+
+checkbox_states = []    # stores status of each checkbox (True if checked, False if not)
 
 def show_history():
     try:
@@ -481,7 +505,7 @@ def show_history():
 
     history_canvas.update_idletasks()
 
-    # dict: keys (month,year): values [expense1, etc]
+    # dict: keys (month,year): values [{expense1}, {etc}]
     history = {}
 
     for expense in expenses:
@@ -515,17 +539,26 @@ def show_history():
             )
         month_spent_and_total_expenses_label.pack(side="right")
 
-        for expense in history[month_year_key]:
+        # category and amount of each expense with checkbox
+        for expense_dict in history[month_year_key]:
             expense_row = tk.Frame(history_inner_frame, bg=TEXT_BG)
             expense_row.pack(
                 fill="x", padx=(history_canvas.winfo_width() // 4 + history_scrollbar.winfo_width(), history_canvas.winfo_width() // 4), pady=(0,5)
                 )
 
-            category_label = tk.Label(expense_row, text=f"{expense['category']}", font=("Segoe UI", 10), bg=TEXT_BG, fg=TEXT)
+            category_label = tk.Label(expense_row, text=f"{expense_dict['category']}", font=("Segoe UI", 10), bg=TEXT_BG, fg=TEXT)
             category_label.pack(side="left")
             
-            amount_label = tk.Label(expense_row, text=f"${expense['amount']:.2f}", font=("Segoe UI", 10), bg=TEXT_BG, fg=TEXT)
+            selected = tk.BooleanVar(value=False)       # set check state of tkinter checkbutton as false on start
+            checkbox = tk.Checkbutton(expense_row, variable=selected, selectcolor=WHITE, bg=TEXT_BG, activebackground=TEXT_BG)
+            checkbox.pack(side="right")
+
+            amount_label = tk.Label(expense_row, text=f"${expense_dict['amount']:.2f}", font=("Segoe UI", 10), bg=TEXT_BG, fg=TEXT)
             amount_label.pack(side="right")
+
+            # append the expense dict and corresponding checkbox state to the list
+            # tk.BooleanVar = mutable, therefore if a box is checked later on, False will update to True and list always holds correct value
+            checkbox_states.append((expense_dict, selected))
         
         month_divider = tk.Frame(history_inner_frame, bg=CYAN, height=2)
         month_divider.pack(
@@ -628,6 +661,7 @@ object_padding = [
     (save_budget_button, None, lambda height: (height//25, 0)),
 
     (history_phrase, None, lambda height: (height//50, height//125)),
+    (delete_expense_button, None, lambda height: height//50),
     
     (log_expense_button, lambda height: height//100, lambda height: height//50),
     (breakdown_button, lambda height: height//100, lambda height: height//50),
@@ -658,7 +692,6 @@ def initiate_padding(event):
         if history_frame.winfo_ismapped():
             show_history()
 
-# event listener
 # root.bind(event_name, function) --> "for root or object within, when event happens, call function with the event as parameter"
 # configure event occurs when on window initialization/resize/move
 root.bind("<Configure>", (initiate_padding))
