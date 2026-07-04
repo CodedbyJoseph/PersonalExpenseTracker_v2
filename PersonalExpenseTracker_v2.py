@@ -467,14 +467,14 @@ def show_history():
 
     history_canvas.update_idletasks()
 
-    # dict: keys (month,year): values [{expense1}, {etc}]
+    # dict: keys (month,year): values [{expense1}, {etc}] where each expense dict has year, mnth, amnt, cate, desc
     history = {}
 
     for expense in expenses:
         key = (expense["month"], expense["year"])   # tuple key (month, year)
         if key not in history:
             history[key] = []                        # create key and empty list value
-        history[key].append(expense)                 # append expense to that month's list value
+        history[key].append(expense)                 # append expense to that month's list
     
     # display each month and its respective expenses
     for month_year_key in reversed(list(history.keys())):   # display entries from newest to oldest month
