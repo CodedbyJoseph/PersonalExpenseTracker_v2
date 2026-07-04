@@ -451,49 +451,11 @@ history_scrollbar = tk.Scrollbar(history_frame, orient="vertical", command=histo
 history_scrollbar.pack(side="right", fill="y")
 history_canvas.configure(yscrollcommand=history_scrollbar.set)
 
-# delete expenses button
-DEL_EXP_BUTTON_BG = "#89b4fa"
-DEL_EXP_BUTTON_TEXT = "#1e1e2e"
-delete_expense_button = tk.Button(
-    history_frame,
-    font=("Segoe UI", 8, "bold"),
-    text="Delete Forever",
-    bg=DEL_EXP_BUTTON_BG,
-    fg=DEL_EXP_BUTTON_TEXT,
-    activebackground=DEL_EXP_BUTTON_BG,
-    activeforeground=DEL_EXP_BUTTON_TEXT,
-    relief=tk.FLAT,
-    padx=4, pady=2,
-    command=lambda: None
-    )
-delete_expense_button.pack(side="bottom")
-
-# pack canvas to fill remaining space
-history_canvas.pack(fill="both", expand=True)
-
-# inner
-history_inner_frame = tk.Frame(history_canvas, bg=DARK_BG)
-history_inner_frame_id = history_canvas.create_window((0, 0), window=history_inner_frame, anchor="nw")
-
-# make inner frame match canvas width on window open/resize
-history_canvas.bind("<Configure>", lambda e: history_canvas.itemconfig(history_inner_frame_id, width=e.width))
-
-# update scroll range when inner frame content grows
-history_inner_frame.bind("<Configure>", lambda e: history_canvas.configure(scrollregion=history_canvas.bbox("all")))
-
-# allow scroll to occur when hovering over child widgets inside the canvas
-def on_mousewheel(event):
-    if breakdown_frame.winfo_ismapped():
-        breakdown_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-    if history_frame.winfo_ismapped():
-        history_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-# bind to root instead of canvas so scroll occurs for any mouse position
-root.bind("<MouseWheel>", on_mousewheel)
-
-checkbox_states = []    # stores status of each checkbox (True if checked, False if not)
+checkbox_states = []    # stores expense dict and its checkbox status (True if checked, False if not)
 
 def show_history():
+    checkbox_states.clear()     # clear the list so we are not appending more checkbox states on show_history() rerun
+
     try:
         with open("data.json", "r") as file:
             expenses = json.load(file)
@@ -564,6 +526,69 @@ def show_history():
         month_divider.pack(
             fill="x", padx=(history_canvas.winfo_width() // 4 + history_scrollbar.winfo_width(), history_canvas.winfo_width() // 4), pady=5
             )
+        
+def delete_expenses():
+    to_delete = [expense for (expense, selected) in checkbox_states if selected.get()]      # create list of checkbox status True to delete
+    if not to_delete:
+        return          # return if nothing to delete (empty list)
+
+    try:
+        with open("data.json", "r") as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return
+
+    for expense in to_delete:
+        if expense in data:
+            data.remove(expense)        # remove checked expenses
+
+    with open("data.json", "w") as file:
+        json.dump(data, file)           # rewrite file with unchecked expenses only
+
+    summary_text = f"Spent:  {current_spent()}  |  Budget:  {current_budget()}  |  Remaining:  {current_remaining()}"
+    summary_label.config(text=summary_text)
+
+    show_history()      # call show history again to display the updated history
+
+# delete expenses button
+DEL_EXP_BUTTON_BG = "#89b4fa"
+DEL_EXP_BUTTON_TEXT = "#1e1e2e"
+delete_expense_button = tk.Button(
+    history_frame,
+    font=("Segoe UI", 8, "bold"),
+    text="Delete Forever",
+    bg=DEL_EXP_BUTTON_BG,
+    fg=DEL_EXP_BUTTON_TEXT,
+    activebackground=DEL_EXP_BUTTON_BG,
+    activeforeground=DEL_EXP_BUTTON_TEXT,
+    relief=tk.FLAT,
+    padx=4, pady=2,
+    command=lambda: delete_expenses()
+    )
+delete_expense_button.pack(side="bottom")
+
+# pack canvas to fill remaining space
+history_canvas.pack(fill="both", expand=True)
+
+# inner
+history_inner_frame = tk.Frame(history_canvas, bg=DARK_BG)
+history_inner_frame_id = history_canvas.create_window((0, 0), window=history_inner_frame, anchor="nw")
+
+# make inner frame match canvas width on window open/resize
+history_canvas.bind("<Configure>", lambda e: history_canvas.itemconfig(history_inner_frame_id, width=e.width))
+
+# update scroll range when inner frame content grows
+history_inner_frame.bind("<Configure>", lambda e: history_canvas.configure(scrollregion=history_canvas.bbox("all")))
+
+# allow scroll to occur when hovering over child widgets inside the canvas
+def on_mousewheel(event):
+    if breakdown_frame.winfo_ismapped():
+        breakdown_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+    if history_frame.winfo_ismapped():
+        history_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+# bind to root instead of canvas so scroll occurs for any mouse position
+root.bind("<MouseWheel>", on_mousewheel)
 
 #------------------------------------------------------------------------------------------------------ TOGGLE FRAME FUNCTION
 # hide and show frame function for on event of button
