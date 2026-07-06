@@ -279,10 +279,11 @@ breakdown_inner_frame = tk.Frame(breakdown_canvas, bg=DARK_BG)
 breakdown_inner_frame_id = breakdown_canvas.create_window((0, 0), window=breakdown_inner_frame, anchor="nw")
 
 # make inner frame match canvas width on window open/resize
-breakdown_canvas.bind("<Configure>", lambda e: breakdown_canvas.itemconfig(breakdown_inner_frame_id, width=e.width))
+# tkinter automatically passes the event object as argument to the function below
+breakdown_canvas.bind("<Configure>", lambda event: breakdown_canvas.itemconfig(breakdown_inner_frame_id, width=event.width))
 
 # update scroll range when inner frame content grows
-breakdown_inner_frame.bind("<Configure>", lambda e: breakdown_canvas.configure(scrollregion=breakdown_canvas.bbox("all")))
+breakdown_inner_frame.bind("<Configure>", lambda event: breakdown_canvas.configure(scrollregion=breakdown_canvas.bbox("all")))
 
 # create bar graph
 def bar_graph():
@@ -508,7 +509,7 @@ def show_history():
                 fill="x", padx=(history_canvas.winfo_width() // 4 + history_scrollbar.winfo_width(), history_canvas.winfo_width() // 4), pady=(0,5)
                 )
 
-            category_label = tk.Label(expense_row, text=f"{expense_dict['category']}", font=("Segoe UI", 10), bg=TEXT_BG, fg=TEXT)
+            category_label = tk.Label(expense_row, text=f"{expense_dict['category']} {expense_dict['description']}", font=("Segoe UI", 10), bg=TEXT_BG, fg=TEXT)
             category_label.pack(side="left")
             
             selected = tk.BooleanVar(value=False)       # set check state of tkinter checkbutton as false on start
@@ -575,10 +576,10 @@ history_inner_frame = tk.Frame(history_canvas, bg=DARK_BG)
 history_inner_frame_id = history_canvas.create_window((0, 0), window=history_inner_frame, anchor="nw")
 
 # make inner frame match canvas width on window open/resize
-history_canvas.bind("<Configure>", lambda e: history_canvas.itemconfig(history_inner_frame_id, width=e.width))
+history_canvas.bind("<Configure>", lambda event: history_canvas.itemconfig(history_inner_frame_id, width=event.width))
 
 # update scroll range when inner frame content grows
-history_inner_frame.bind("<Configure>", lambda e: history_canvas.configure(scrollregion=history_canvas.bbox("all")))
+history_inner_frame.bind("<Configure>", lambda event: history_canvas.configure(scrollregion=history_canvas.bbox("all")))
 
 # allow scroll to occur when hovering over child widgets inside the canvas
 def on_mousewheel(event):
