@@ -1,6 +1,6 @@
 How to use program:
 - clone PersonalExpenseTracker_v2.py
-- run with python PersonalExpenseTracker_v2.py in the terminal or any IDE"
+- run with python PersonalExpenseTracker_v2.py in the terminal or any IDE
 
 Core features:
 - very user friendly GUI
