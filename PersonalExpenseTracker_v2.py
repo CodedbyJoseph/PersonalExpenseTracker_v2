@@ -96,8 +96,26 @@ summary_label = tk.Label(root, text=summary_text, font=("Segoe UI", 12), bg=BG, 
 summary_label.pack()
 
 # warning label
-warning_label = tk.Label(root, text="", font=("Segoe UI", 11), bg=BG, fg=RED)
+warning_label = tk.Label(root, text="", font=("Segoe UI", 9, "bold"), bg=BG, fg=RED)
 warning_label.pack()
+
+def warning():      # display warning label if 20% budget left
+    remaining = current_remaining()
+    budget = current_budget()
+
+    if remaining is None or budget is None:     # if one is None, no warning
+        warning_label.config(text="")
+        return
+
+    remaining = float(remaining.strip("$"))
+    budget = float(budget.strip("$"))
+
+    if budget > 0 and remaining / budget <= 0.2:
+        warning_label.config(text="Warning: Low Budget Remaining")
+    else:
+        warning_label.config(text="")
+
+warning()
 
 #------------------------------------------------------------------------------------------------------ NAVIGATION FRAME
 # navigation frame
@@ -170,7 +188,6 @@ too_long_expense_entry = tk.Label(log_expense_frame, text=f"Invalid Entry (Too L
 
 # save expense function
 def save_expense(amount, category, desc):
-
     try:
         with open("data.json", "r") as file:
             data = json.load(file)
@@ -218,9 +235,10 @@ def save_expense(amount, category, desc):
         
         valid_expense_entry.pack(pady=(5,0))        # show success msg
 
-        # update summary text with new spent and remaining
+        # update summary text with new spent and remaining, check for warning
         summary_text = f"Spent:  {current_spent()}  |  Budget:  {current_budget()}  |  Remaining:  {current_remaining()}"
         summary_label.config(text=summary_text)     # config to update text, colour, or font only
+        warning()
     
     else:
         # show error msg
@@ -392,9 +410,10 @@ def save_budget(new_budget):
         # update budget phrase with new budget
         current_budget_phrase.config(text=f"Current Budget: ${float(new_budget):.2f}")
 
-        # update summary text with new budget
+        # update summary text with new budget, check for warning
         summary_text = f"Spent:  {current_spent()}  |  Budget:  ${float(new_budget):.2f}  |  Remaining:  {current_remaining()}"
         summary_label.config(text=summary_text)
+        warning()
 
         if invalid_budget_entry.winfo_ismapped():
             invalid_budget_entry.pack_forget()
@@ -411,6 +430,7 @@ def save_budget(new_budget):
         # update summary text (budget is none, remaining is none, spent stays same)
         summary_text = f"Spent:  {current_spent()}  |  Budget:  None  |  Remaining:  None"
         summary_label.config(text=summary_text)
+        warning()
 
         if invalid_budget_entry.winfo_ismapped():
             invalid_budget_entry.pack_forget()
@@ -548,6 +568,7 @@ def delete_expenses():
 
     summary_text = f"Spent:  {current_spent()}  |  Budget:  {current_budget()}  |  Remaining:  {current_remaining()}"
     summary_label.config(text=summary_text)
+    warning()
 
     show_history()      # call show history again to display the updated history
 
